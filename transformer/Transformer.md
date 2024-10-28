@@ -25,7 +25,7 @@
 ## Backgrounds
 In the NLP field, traditional RNNs model the text sequences while suffering from the gradient vanishing and explosion issues. Like human memory, RNNs struggle to retain long-past information, focusing more on recent inputs. LSTM excels in long-term dependencies and alleviates gradient vanishing by its memory cell (forget/input/output gates). 
 
-In 2017, Google's scientists proposed transformer with its famous attention mechanism in the "Attention is All You Need" paper [1] (cited by 138,640), which became the SOTA deep learning framework widely used in NLP. 
+In 2017, Google's scientists proposed the transformer with its famous attention mechanism in the "Attention is All You Need" paper [1] (cited by 138,640), which became the SOTA deep learning framework widely used in NLP. 
 
 ## Transformer Architecture
 The transformer architecture explains its transformative performance in NLP tasks.
@@ -60,95 +60,93 @@ After separating the long text sequences into tokens (to sync with the generally
 
 **One-Hot:** One-hot embedding is straightforward. If the vocabulary has 10k different words, each word will become a 10k-dimension vector. All other elements are "0" except for a single element which is a "1". The dimension of the embedded vectors highly depends on the vocab size and each vector is sparse and huge.
 
-**Bag of Words:** Bag of words is to model texts by counting the word frequency. It indeed makes the vectors denser. But the shortcome is losing semantic meanings if only count the number of words.
+**Bag of Words:** Bag of words is to model texts by counting the word frequency. It indeed makes the vectors denser. But the shortcoming is losing semantic meanings if only counting the number of words.
 
-**Word Embeddings:** To create dense and smaller word representations, while maintain the semantic meanings, methods like Word2Vec [6] and GloVe [7] are often used. Word2Vec trains embeddings with CBOW (continuous bag of words) and Skip-gram. To put it simple, the embeddings are trained by predicting a token with its surrounding tokens, and by predicting its surrounding tokens with a specific token.
+**Word Embeddings:** To create dense and smaller word representations, while maintaining the semantic meanings, methods like Word2Vec [6] and GloVe [7] are often used. Word2Vec trains embeddings with CBOW (continuous bag of words) and Skip-gram. To put it simply, the embeddings are trained by predicting a token with its surrounding tokens, and by predicting its surrounding tokens with a specific token.
 
 ### Positional Encoding
 With word embedding, each word now has its own numerical representation.
 
 In natural language, words' relative orders carry information. For example, in the sentence "My cat eats fish" and "My fish eats cat", the positions of "*cat*" and "*fish*" determine the sentence meanings.
 
-In traditional RNN, as the model processes the input word vectors sequentially, using the same word embedding for the same word works. E.g. in both of the 2 sentences, cat: [0.1, 0.2, -0.1], fish: [-0.1, -0.2, 0.1], regardless of the positions.
+In traditional RNNs, as the model processes the input word vectors sequentially, using the same word embedding for the same word works. E.g. in both of the 2 sentences, cat: [0.1, 0.2, -0.1], fish: [-0.1, -0.2, 0.1], regardless of the positions.
 
-But in transformer, as the model processes each word in parallel for efficiency, using word embeddings along fails to capture relative orders. Therefore, the authors proposed positional encoding with 2 options: One is to learn the embeddings, which means trainable parameters are required; Another one is to directly using some heuristics like sinusoidal. They found similar performances of these options. Finally, they chose a set of sinusoidal functions to encode positions without adding additional parameters, reducing computational cost.
+But in the transformer, as the model processes each word in parallel for efficiency, using word embeddings alone fails to capture relative orders. Therefore, the authors proposed positional encoding with 2 options: One is to learn the embeddings, which means trainable parameters are required; Another one is to directly use some heuristics like sinusoidal. They found similar performances of these options. Finally, they chose a set of sinusoidal functions to encode positions without adding additional parameters, reducing computational cost.
 
 ### Encoders and Decoders
-With word embedding and positional encoding, the transformer model can understand each word and its relative order now. Before diving into self-attention, it is worth mentioning that the transformer architecture has 2 main sections, the encoders and the decoders. On the high level, the encoders are to understand the context and the decoders are to generate predictions. Moreover, stacking only encoders yields models like BERT (Bidirectional encoder representations from transformers [8]), focused on understanding context, while stacking decoders creates autoregressive models like GPT (Generative Pre-trained Transformer) for text generation.
+With word embedding and positional encoding, the transformer model can understand each word and its relative order now. Before diving into self-attention, it is worth mentioning that the transformer architecture has 2 main sections, the encoders and the decoders. On a high level, the encoders are to understand the context and the decoders are to generate predictions. Moreover, stacking only encoders yields models like BERT (Bidirectional encoder representations from transformers [8]), focused on understanding context, while stacking decoders creates autoregressive models like GPT (Generative Pre-trained Transformer) for text generation.
 
 Let's start from the architecture of Encoders, aka. encoder layers.
 
 ![Transformer Encoder Layers. Reference: https://glassboxmedicine.com/2019/08/15/the-transformer-attention-is-all-you-need/](images/encoder_layers.png)
 
 ### Self-Attention
-After the input text is vectorized and attached positional information, how does the model understand the relation of words? This is where the self-attention mechanism works. 
+After the input text is vectorized and attached with positional information, how does the model understand the relation of words? This is where the self-attention mechanism works. 
 In the sentence "My name is Ana." The word "*name*" is more relevant to "*Ana*" than to "*is*". Failing to capture the information causes information loss. 
 The transformer architecture leverages the attention mechanism to solve this problem. In encoders, it is **self-attention**, in decoders, it is **masked self-attention** and between encoders and decoders, it is **encoder-decoder attention**. You will see the word "*multi-head*" a lot. We will discuss it later.
 
 #### Query, Key, Value
-For each token (word embedding + positional encoding now), the architecture will generate **query**, **key** and **value** (Q, K, V) with linear transformations using 3 sets of matrixes. Note, here, the **query**, **key** and **value** are generated vectors using the encoded inputs and the mentioned matrixes. Suppose we have an English to Chinese machine translation task and the English Sequence is "I love apples.", in the self-attention mechanism, we will have 3 query vectors for "I", "love", and "apples" respectively and 3 key vectors for these 3 words too. Then to get the similarity/relevance between "**I**" and every other word, including itself, we need to calculate the [**Dot Product**](https://en.wikipedia.org/wiki/Dot_product) of the **query** of "**I**" and the **key** of "**I**", "**love**" and "**apples**" respectively. Then a softmax will be applied to these 3 values and generate 3 new softmax output. We then multiply the **value** vector with the softmax output and create a new vector, which is the the *self-attention values for "I"*.
+For each token (word embedding + positional encoding now), the architecture will generate **query**, **key** and **value** (Q, K, V) with linear transformations using 3 sets of matrices. Note, here, the **query**, **key** and **value** are generated vectors using the encoded inputs and the mentioned matrices. Suppose we have an English to Chinese machine translation task and the English Sequence is "I love apples.", in the self-attention mechanism, we will have 3 query vectors for "I", "love", and "apples" respectively and 3 key vectors for these 3 words too. Then to get the similarity/relevance between "**I**" and every other word, including itself, we need to calculate the [**Dot Product**](https://en.wikipedia.org/wiki/Dot_product) of the **query** of "**I**" and the **key** of "**I**", "**love**" and "**apples**" respectively. Then a softmax will be applied to these 3 values and generate 3 new softmax outputs. We then multiply the **value** vector with the softmax output and create a new vector, which is the *self-attention values for "I"*.
 
-As we pointed out, transformer processes words in parallel, which means the *key, query, values of "**I**", "**love**" and "**apples**" will be created in the same time regardless of the word orders*. To enable this, the weights used for **query** are the same accross words, so do **key** and **value**. 
+As we pointed out, the transformer processes words in parallel, which means the *key, query, and values of "**I**", "**love**" and "**apples**" will be created at the same time regardless of word order*. To enable this, the weights used for **query** are the same across words, as are **key** and **value**. 
 
 #### Scaled Dot Product
-We simply mentioned Dot Product above. But the paper is actually using scaled dot product. When the input dimension gets larger, the value created from query * key will be large too. So after [softmax](https://en.wikipedia.org/wiki/Softmax_function), some self-attention values are large, while some are close to 0. If we don't scale the Q*K output, we might have gradient descent/explosing issues and the training will not be stable. The scaling stablize the training and avoid saturating the softmax output.
+We mentioned Dot Product above. But the paper actually uses scaled dot product. When the input dimension gets larger, the value created from query * key will also be large. So after [softmax](https://en.wikipedia.org/wiki/Softmax_function), some self-attention values are large, while others are close to 0. If we don't scale the Q*K output, we might have gradient vanishing/explosion issues and the training will not be stable. Scaling stabilizes the training and avoids saturating the softmax output.
 
 ![Scaled Dot Product from paper](images/scaled_dot_product.png)
 ![Self-Attention Formula](images/SA_formula.png)
 
 #### Multi-Head Attention
-In the transformer model, the authors proposed a stack of self-attention cells (8 heads at first). Each cell use its own sets of weights for query, key and value separately. The reason behind it is to capture complex paragraph and context meanings. Which means, each independent head focuses on a different aspect or subspace of the input information.
+In the transformer model, the authors proposed a stack of self-attention cells (eight heads initially). Each cell has its own sets of weights for query, key, and value. This allows each independent head to focus on a different aspect of the input information, thus capturing complex meanings.
 
 ![Multi-head Attention from paper](images/MHA.png)
 
-To control the computational cost of multiple attention calculations, Multi-Head Attention reduces dimensions in each head. If head = 8, and the original model dimension is 512, the authors use dk = dv = d_model/h = 64 in each head. Then the MHA outputs are concatenated, so that the output dimension will be the same with the original input.
-For example, if the input vector is [1, 2, 3, 4, 5, 6, 7, 8], head = 2, then in the first head we have v1=[1, 2, 3, 4] and in the second head we have v2=[5, 6, 7, 8]. We apply distinct sets of w1 to v1 and w2 to v2(w1 and w2 are unique to their head), then concatenate the outputs, which ultimately match the original input dimensions.
+To control computational cost in multi-head attention, dimensions are reduced in each head. If head = 8, and the original model dimension is 512, each head dimension is set to dk = dv = d_model/h = 64. The MHA outputs are then concatenated, ensuring the final output dimension matches the original input.
 
 ### Residual Connection
-Let's get back to the encoder layers:
+Let's return to the encoder layers:
 
 ![Transformer Encoder Layers. Reference: https://glassboxmedicine.com/2019/08/15/the-transformer-attention-is-all-you-need/](images/encoder_layers.png)
 
-Now we have the multi-head attention. The next components are the residual connections and normalization. To mitigate the vanishing gradient problem and make it more efficient to train deeper networks, the transformer architecture allows self-attention layers to connect to the word embedding&position encoding input. This is residual connections, aka, skip connections, which were first popularized by ResNet [9].
+Following multi-head attention, residual connections and normalization are introduced. To mitigate the vanishing gradient problem and enable efficient training of deeper networks, transformer architecture allows self-attention layers to connect to the word embedding & position encoding input, forming residual (or skip) connections popularized by ResNet [9].
 
 ### Layer Normalization
-In deep learning models, to reduce overfitting, normalization is a commonly used technique. Normalizing the input of activation functions ensures the values are centered around zero, also leading to more stable and faster training. 
+In deep learning, normalization is a widely used technique to reduce overfitting. Normalizing activation inputs ensures values are centered around zero, enabling faster and more stable training.
 
-Computer vision tasks use batch normalization a lot, because the inputs are images with the same shape(dims). However, each input text in NLP tasks can have different number of tokens or size. Also the tokens differ a lot in different sentences. Simply using batch normalization on each dimension is impossible.Therefore, layer normalizations are preferred. It is to normalize across all features(dimensions) in a training example, instead of normalize across all the examples for a dimension.
+In computer vision, batch normalization is common because image inputs share the same shape. However, each NLP input can have different numbers of tokens or sizes, and token variations are substantial across sentences. Using batch normalization across dimensions is impractical, so layer normalization, which normalizes across all features (dimensions) in a training example, is preferred.
 
 #### PreLN vs. PostLN
 
 ![PreLN vs. PostLN, source: https://benjaminwarner.dev/2023/07/28/rest-of-the-transformer](images/LNs.png)
 
-In practice, there are 2 ways to add layer normalization(LN). 
--  PostLN(left): place the LN after the residual block. It normalized the feedforward network residual as well, which is more robust.
--  PreLN(right): place the LN inside the residual block. It normalizes fewer parameters, which is actually helping prevent gradient explosion/valishing. 
-If the network is very deep, then pre-norm can be better. If the model has fewer layers, then post-norm will be robust. 
+In practice, there are 2 ways to add layer normalization (LN). 
+-  PostLN (left): places LN after the residual block, normalizing the feedforward network residual as well, which is more robust.
+-  PreLN (right): places LN inside the residual block, normalizing fewer parameters, which helps prevent gradient explosion/vanishing.
+
+For deep networks, pre-norm is better, while post-norm works well for shallower models. 
 
 ### Feedforward Network
-The last part of an encoder layer is the feedforward network. It is some linear layers with activation functions like ReLu.
+The last part of an encoder layer is the feedforward network, consisting of linear layers with activation functions like ReLU.
 
-Now we have covered the basic structures in the encoder. Next we will discuss decoders. Encoders and decoders have similar normalization and feedforward networks. Here we only include the different components.
+Now we have covered the encoder structure. Encoders and decoders have similar normalization and feedforward networks, so here we focus only on different components.
 
 ### Masked Multi-head Attention
-Looking at the architecture again, the attentions in the right tower (decoders) are different. 
+Looking at the architecture, the right tower (decoders) is different.
 
 ![Transformer Architecture from paper](images/transformer.png)
 
-We have defined Multi-head, but what is masked? Masked Self-Attention (MSA) is to calculate the relevance/similarity between each word, including itself and all the words preceding that word. We have MSA here instead of Self-attention because the decoder is supposed to translate (in the English to Chinese translation task) the content. So when predicting the next token, it is unable to access anything after it, hence preventing data leakage during training and helping generating sequences autoregressively.
-Here is a reference of some [text generation strategies](https://huggingface.co/blog/how-to-generate) used to predict the next token.
+We have defined Multi-head, but what is masked? Masked Self-Attention (MSA) calculates relevance/similarity between each word, including itself and preceding words. MSA is used instead of Self-Attention because the decoder is designed to translate (in the English-to-Chinese example). Predicting the next token relies on preceding tokens, so masking prevents data leakage during training and aids in autoregressive generation. For further detail, refer to [text generation strategies](https://huggingface.co/blog/how-to-generate) used to predict the next token.
 
 ### Encoder-decoder Attention
-As we mentioned, the encoders are to learn the context and the decoders are to create new tokens, the  Encoder-decoder Attention is to connect encoders and decoders, allowing the decoder to selectively focus on the significant words in the input. For example, in the sentence "I love apples", when translating to Chinese "我爱苹果“, we create the query for "我", then use it to calculate the dot product with each key in the encoded "I love apples" and get the encoder-decoder attention values.
-Note, this layer applies a distinct set of weight matrixes from self-attention to focus selectively on significant words from the encoder output.
+As noted, encoders learn context while decoders create new tokens. Encoder-decoder Attention connects encoders and decoders, letting the decoder selectively focus on significant words in the input. For example, in translating "I love apples" to "我爱苹果," the query for "我" is used to calculate dot products with each key in the encoded "I love apples," yielding encoder-decoder attention values. This layer uses a distinct set of weight matrices from self-attention to focus selectively on significant words from the encoder output.
 
 ### Training and Inferencing
-During training, each token’s output from a layer computation can be processed in parallel in the subsequent layer. Meanwhile, as we already have the target sequence (just like we already have the label to predict), so in the decoder, masked self-attention is calculated in parallel too.
-During inferencing, the decoder has to predict based on the previous tokens, which means it can’t be fully parallelized, resulting in slower processing times.
+During training, each token’s output from a layer computation can be processed in parallel in the subsequent layer. Since we already have the target sequence (like having the label to predict), in the decoder, masked self-attention can also be calculated in parallel.
+During inference, the decoder relies on previously generated tokens, so it can't be fully parallelized, resulting in slower processing times.
 
 
 ## What's Next
-This is a summary of the transformer architecture. In the next posts, we will discuss more about BERT, knowledge distillation and various multi-modal models.
+This is a summary of the transformer architecture. In the next posts, we will discuss BERT, knowledge distillation, and various multi-modal models.
 
 ## References
 [1]: https://user.phil.hhu.de/~cwurm/wp-content/uploads/2020/01/7181-attention-is-all-you-need.pdf  
